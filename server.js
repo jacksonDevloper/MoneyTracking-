@@ -16,19 +16,25 @@ app.post('/api/feedback', async (req, res) => {
     const fetch = (...args) => import('node-fetch').then(function(mod) { return mod.default(...args); });
 
     const apiKey = process.env.GEMINI_API_KEY;
-    const url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=' + apiKey;
+
+    if (!apiKey) {
+      return res.status(500).json({ error: 'API key not configured on server' });
+    }
+
+    // Try v1beta with gemini-1.5-flash (more compatible)
+    const url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent';
 
     const response = await fetch(url, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        'x-goog-api-key': apiKey
       },
       body: JSON.stringify({
         contents: [
           {
-            parts: [
-              { text: prompt }
-            ]
+            role: 'user',
+            parts: [{ text: prompt }]
           }
         ],
         generationConfig: {
@@ -41,6 +47,7 @@ app.post('/api/feedback', async (req, res) => {
     const data = await response.json();
 
     if (data.error) {
+      console.error('Gemini error:', JSON.stringify(data.error));
       return res.status(500).json({ error: data.error.message });
     }
 
