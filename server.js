@@ -13,45 +13,19 @@ app.post('/api/feedback', async (req, res) => {
       return res.status(400).json({ error: 'No prompt provided' });
     }
 
-    const fetch = (...args) => import('node-fetch').then(function(mod) { return mod.default(...args); });
-
     const apiKey = process.env.GEMINI_API_KEY;
 
     if (!apiKey) {
-      return res.status(500).json({ error: 'API key not configured on server' });
+      return res.status(500).json({ error: 'API key not configured' });
     }
 
-    // Try v1beta with gemini-1.5-flash (more compatible)
-    const url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent';
+    const { GoogleGenerativeAI } = require('@google/generative-ai');
+    const genAI = new GoogleGenerativeAI(apiKey);
+    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
 
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-goog-api-key': apiKey
-      },
-      body: JSON.stringify({
-        contents: [
-          {
-            role: 'user',
-            parts: [{ text: prompt }]
-          }
-        ],
-        generationConfig: {
-          maxOutputTokens: 1000,
-          temperature: 0.9
-        }
-      })
-    });
+    const result = await model.generateContent(prompt);
+    const text = result.response.text();
 
-    const data = await response.json();
-
-    if (data.error) {
-      console.error('Gemini error:', JSON.stringify(data.error));
-      return res.status(500).json({ error: data.error.message });
-    }
-
-    const text = data.candidates[0].content.parts[0].text;
     res.json({ feedback: text });
 
   } catch (err) {
