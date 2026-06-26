@@ -13,7 +13,7 @@ app.post('/api/feedback', async (req, res) => {
       return res.status(400).json({ error: 'No prompt provided' });
     }
 
-    const apiKey = process.env.OPENAI_API_KEY;
+    const apiKey = process.env.GEMINI_API_KEY;
 
     if (!apiKey) {
       return res.status(500).json({ error: 'API key not configured' });
@@ -21,29 +21,36 @@ app.post('/api/feedback', async (req, res) => {
 
     const fetch = (...args) => import('node-fetch').then(function(mod) { return mod.default(...args); });
 
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    const url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent';
+
+    const response = await fetch(url, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': 'Bearer ' + apiKey
+        'x-goog-api-key': apiKey
       },
       body: JSON.stringify({
-        model: 'gpt-4o-mini',
-        max_tokens: 1000,
-        messages: [
-          { role: 'user', content: prompt }
-        ]
+        contents: [
+          {
+            role: 'user',
+            parts: [{ text: prompt }]
+          }
+        ],
+        generationConfig: {
+          maxOutputTokens: 1000,
+          temperature: 0.9
+        }
       })
     });
 
     const data = await response.json();
 
     if (data.error) {
-      console.error('OpenAI error:', JSON.stringify(data.error));
+      console.error('Gemini error:', JSON.stringify(data.error));
       return res.status(500).json({ error: data.error.message });
     }
 
-    const text = data.choices[0].message.content;
+    const text = data.candidates[0].content.parts[0].text;
     res.json({ feedback: text });
 
   } catch (err) {
