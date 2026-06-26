@@ -22,7 +22,7 @@ app.post('/api/feedback', async (req, res) => {
     const fetch = (...args) => import('node-fetch').then(function(mod) { return mod.default(...args); });
 
     // gemini-2.0-flash-lite is available on free tier for AQ. keys
-    const url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-lite:generateContent';
+    const url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent';
 
     const response = await fetch(url, {
       method: 'POST',
