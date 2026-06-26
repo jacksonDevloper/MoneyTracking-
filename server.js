@@ -37,7 +37,7 @@ app.post('/api/feedback', async (req, res) => {
           }
         ],
         generationConfig: {
-          maxOutputTokens: 1000,
+          maxOutputTokens: 2048,
           temperature: 0.9
         }
       })
