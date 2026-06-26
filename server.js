@@ -19,13 +19,39 @@ app.post('/api/feedback', async (req, res) => {
       return res.status(500).json({ error: 'API key not configured' });
     }
 
-    const { GoogleGenerativeAI } = require('@google/generative-ai');
-    const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash-latest' });
+    const fetch = (...args) => import('node-fetch').then(function(mod) { return mod.default(...args); });
 
-    const result = await model.generateContent(prompt);
-    const text = result.response.text();
+    // Use v1 API with gemini-pro which works with AQ. keys
+    const url = 'https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent';
 
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-goog-api-key': apiKey
+      },
+      body: JSON.stringify({
+        contents: [
+          {
+            role: 'user',
+            parts: [{ text: prompt }]
+          }
+        ],
+        generationConfig: {
+          maxOutputTokens: 1000,
+          temperature: 0.9
+        }
+      })
+    });
+
+    const data = await response.json();
+
+    if (data.error) {
+      console.error('Gemini error:', JSON.stringify(data.error));
+      return res.status(500).json({ error: data.error.message });
+    }
+
+    const text = data.candidates[0].content.parts[0].text;
     res.json({ feedback: text });
 
   } catch (err) {
