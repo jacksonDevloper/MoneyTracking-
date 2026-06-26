@@ -21,8 +21,8 @@ app.post('/api/feedback', async (req, res) => {
 
     const fetch = (...args) => import('node-fetch').then(function(mod) { return mod.default(...args); });
 
-    // Use v1 API with gemini-pro which works with AQ. keys
-    const url = 'https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent';
+    // gemini-2.0-flash-lite is available on free tier for AQ. keys
+    const url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-lite:generateContent';
 
     const response = await fetch(url, {
       method: 'POST',
@@ -57,6 +57,20 @@ app.post('/api/feedback', async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Server error: ' + err.message });
+  }
+});
+
+// Test endpoint to list available models
+app.get('/models', async (req, res) => {
+  try {
+    const fetch = (...args) => import('node-fetch').then(function(mod) { return mod.default(...args); });
+    const apiKey = process.env.GEMINI_API_KEY;
+    const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models?key=' + apiKey);
+    const data = await response.json();
+    const names = data.models ? data.models.map(function(m) { return m.name; }) : data;
+    res.json(names);
+  } catch(err) {
+    res.status(500).json({ error: err.message });
   }
 });
 
